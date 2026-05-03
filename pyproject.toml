@@ -9,6 +9,7 @@ description = "Automated job search agent that aggregates listings from multiple
 requires-python = ">=3.11"
 dependencies = [
     "apscheduler>=3.10",
+    "datasets>=2.0",
     "python-dotenv>=1.0",
     "sqlalchemy>=2.0",
 ]
