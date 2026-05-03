@@ -4,7 +4,7 @@ Default dataset: jacob-hugging-face/job-descriptions (~19 k records, train split
 
 Fields in that dataset
 -----------------------
-position         str   – job title
+position_title   str   – job title (the dataset uses "position_title", not "position")
 company_name     str   – employer name (the dataset uses "company_name", not "company")
 job_description  str   – full job-description text (the dataset uses "job_description", not "description")
 job_skills       str   – comma-separated skill tags, e.g. "Python, SQL, Machine Learning"
@@ -74,7 +74,8 @@ def _normalize(row: dict, dataset_name: str, idx: int) -> JobListing:
     """Map a single HuggingFace dataset row to the canonical JobListing shape."""
     source_id = f"{dataset_name}/{idx}"
 
-    title = str(row.get("position") or "").strip()
+    # Dataset uses "position_title"; fall back to "position" for other datasets.
+    title = str(row.get("position_title") or row.get("position") or "").strip()
     # Dataset uses "company_name"; fall back to "company" for other datasets.
     company = str(row.get("company_name") or row.get("company") or "").strip()
     # Dataset uses "job_description"; fall back to "description" for other datasets.
