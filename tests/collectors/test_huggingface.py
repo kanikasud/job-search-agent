@@ -14,7 +14,7 @@ def _make_dataset(rows: list[dict]):
 
 
 _SAMPLE_ROW = {
-    "position": "Machine Learning Engineer",
+    "position_title": "Machine Learning Engineer",
     "company_name": "Acme AI",
     "job_description": "Build ML pipelines at scale.",
     "job_skills": "Python, TensorFlow, Docker",
@@ -111,7 +111,7 @@ def test_normalize_full_row():
 
 
 def test_normalize_missing_optional_fields():
-    row = {"position": "Engineer", "company_name": "Widgets Inc"}
+    row = {"position_title": "Engineer", "company_name": "Widgets Inc"}
     job = huggingface._normalize(row, "ds", 1)
 
     assert job["title"] == "Engineer"
@@ -122,10 +122,13 @@ def test_normalize_missing_optional_fields():
 
 
 def test_normalize_fallback_to_legacy_field_names():
-    # Collectors using the old field names ("company", "description") still work.
-    row = {**_SAMPLE_ROW, "company_name": None, "company": "Fallback Corp",
+    # Collectors using old field names ("position", "company", "description") still work.
+    row = {**_SAMPLE_ROW,
+           "position_title": None, "position": "Fallback Title",
+           "company_name": None, "company": "Fallback Corp",
            "job_description": None, "description": "Fallback desc"}
     job = huggingface._normalize(row, "ds", 99)
+    assert job["title"] == "Fallback Title"
     assert job["company"] == "Fallback Corp"
     assert job["description"] == "Fallback desc"
 
