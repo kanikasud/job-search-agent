@@ -82,16 +82,11 @@ def test_collect_returns_empty_on_load_error(mock_load):
 
 
 def test_collect_returns_empty_when_datasets_not_installed():
-    import sys
-
-    # Hide the datasets package so the ImportError branch is exercised.
-    original = sys.modules.pop("datasets", None)
-    try:
+    # Setting sys.modules[name] = None tells Python the module is absent;
+    # a plain pop() lets Python reimport from disk (package is installed).
+    with patch.dict("sys.modules", {"datasets": None}):
         jobs = huggingface.collect()
-        assert jobs == []
-    finally:
-        if original is not None:
-            sys.modules["datasets"] = original
+    assert jobs == []
 
 
 # ---------------------------------------------------------------------------
