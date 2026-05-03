@@ -15,8 +15,8 @@ def _make_dataset(rows: list[dict]):
 
 _SAMPLE_ROW = {
     "position": "Machine Learning Engineer",
-    "company": "Acme AI",
-    "description": "Build ML pipelines at scale.",
+    "company_name": "Acme AI",
+    "job_description": "Build ML pipelines at scale.",
     "job_skills": "Python, TensorFlow, Docker",
     "work_type": "Full-time",
     "experience": "Mid-Senior level",
@@ -111,7 +111,7 @@ def test_normalize_full_row():
 
 
 def test_normalize_missing_optional_fields():
-    row = {"position": "Engineer", "company": "Widgets Inc"}
+    row = {"position": "Engineer", "company_name": "Widgets Inc"}
     job = huggingface._normalize(row, "ds", 1)
 
     assert job["title"] == "Engineer"
@@ -121,8 +121,17 @@ def test_normalize_missing_optional_fields():
     assert job["tags"] == []
 
 
+def test_normalize_fallback_to_legacy_field_names():
+    # Collectors using the old field names ("company", "description") still work.
+    row = {**_SAMPLE_ROW, "company_name": None, "company": "Fallback Corp",
+           "job_description": None, "description": "Fallback desc"}
+    job = huggingface._normalize(row, "ds", 99)
+    assert job["company"] == "Fallback Corp"
+    assert job["description"] == "Fallback desc"
+
+
 def test_normalize_empty_strings_become_none():
-    row = {**_SAMPLE_ROW, "location": "", "description": ""}
+    row = {**_SAMPLE_ROW, "location": "", "job_description": ""}
     job = huggingface._normalize(row, "ds", 2)
 
     assert job["location"] is None
@@ -130,7 +139,7 @@ def test_normalize_empty_strings_become_none():
 
 
 def test_normalize_none_values_become_none():
-    row = {**_SAMPLE_ROW, "location": None, "description": None}
+    row = {**_SAMPLE_ROW, "location": None, "job_description": None}
     job = huggingface._normalize(row, "ds", 3)
 
     assert job["location"] is None

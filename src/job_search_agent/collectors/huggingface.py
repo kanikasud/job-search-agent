@@ -4,13 +4,13 @@ Default dataset: jacob-hugging-face/job-descriptions (~19 k records, train split
 
 Fields in that dataset
 -----------------------
-position      str   – job title
-company       str   – employer name
-description   str   – full job-description text
-job_skills    str   – comma-separated skill tags, e.g. "Python, SQL, Machine Learning"
-work_type     str   – "Full-time" / "Part-time" / …  (kept in tags)
-experience    str   – experience band (kept in tags)
-location      str   – free-text city / country (may be absent or empty)
+position         str   – job title
+company_name     str   – employer name (the dataset uses "company_name", not "company")
+job_description  str   – full job-description text (the dataset uses "job_description", not "description")
+job_skills       str   – comma-separated skill tags, e.g. "Python, SQL, Machine Learning"
+work_type        str   – "Full-time" / "Part-time" / …  (kept in tags)
+experience       str   – experience band (kept in tags)
+location         str   – free-text city / country (may be absent or empty)
 
 All fields are mapped into the canonical JobListing TypedDict that every
 collector must produce.  Missing or falsy fields are normalised to safe
@@ -75,8 +75,10 @@ def _normalize(row: dict, dataset_name: str, idx: int) -> JobListing:
     source_id = f"{dataset_name}/{idx}"
 
     title = str(row.get("position") or "").strip()
-    company = str(row.get("company") or "").strip()
-    description = str(row.get("description") or "").strip() or None
+    # Dataset uses "company_name"; fall back to "company" for other datasets.
+    company = str(row.get("company_name") or row.get("company") or "").strip()
+    # Dataset uses "job_description"; fall back to "description" for other datasets.
+    description = str(row.get("job_description") or row.get("description") or "").strip() or None
 
     location_raw = str(row.get("location") or "").strip()
     location = location_raw or None
