@@ -96,3 +96,13 @@ def test_collect_empty_api_response(mock_urlopen):
 
     jobs = remote_ok.collect()
     assert jobs == []
+
+
+@patch("urllib.request.urlopen")
+def test_collect_drops_non_tech_jobs(mock_urlopen):
+    non_tech = {**_SAMPLE_JOB, "id": 999, "slug": "marketing-manager", "position": "Marketing Manager", "tags": ["marketing", "brand"]}
+    mock_urlopen.return_value = _make_response([_LEGAL_NOTICE, _SAMPLE_JOB, non_tech])
+
+    jobs = remote_ok.collect()
+    assert len(jobs) == 1
+    assert jobs[0]["title"] == "Senior Engineer"

@@ -2,6 +2,7 @@
 
 import time
 import urllib.error
+import urllib.parse
 
 from job_search_agent.collectors.base import JobListing, fetch_json
 from job_search_agent.logger import get_logger
@@ -13,17 +14,29 @@ _PER_PAGE = 100
 # The Muse allows ~500 requests/day; a 0.5 s pause keeps well within limits.
 _PAGE_DELAY_SECONDS = 0.5
 
+# Category slugs that cover tech roles on The Muse API.
+_TECH_CATEGORIES = (
+    "Engineering",
+    "Software Engineer",
+    "Data & Analytics",
+    "IT",
+    "Science",
+)
+
 
 def collect(max_pages: int = 10) -> list[JobListing]:
-    """Fetch job listings from The Muse and return them as canonical JobListings.
+    """Fetch tech job listings from The Muse and return them as canonical JobListings.
 
+    Restricts results to tech categories via API query params.
     Paginates until all results are fetched or *max_pages* is reached.
     Returns an empty list if the API is unreachable.
     """
     listings: list[JobListing] = []
 
     for page in range(max_pages):
-        url = f"{_BASE_URL}?page={page}&per_page={_PER_PAGE}"
+        params = [("page", page), ("per_page", _PER_PAGE)]
+        params += [("category", cat) for cat in _TECH_CATEGORIES]
+        url = f"{_BASE_URL}?{urllib.parse.urlencode(params)}"
         logger.info("the_muse: fetching page %d", page)
 
         try:

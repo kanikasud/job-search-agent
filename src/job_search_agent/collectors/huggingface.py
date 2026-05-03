@@ -27,6 +27,7 @@ to reproduce the field inspection step before modifying the transformer.
 from __future__ import annotations
 
 from job_search_agent.collectors.base import JobListing
+from job_search_agent.filters import is_tech_job
 from job_search_agent.logger import get_logger
 
 logger = get_logger(__name__)
@@ -63,10 +64,19 @@ def collect(
     logger.info("huggingface: loaded %d records", len(ds))
 
     results: list[JobListing] = []
+    skipped = 0
     for idx, row in enumerate(ds):
-        results.append(_normalize(row, dataset_name, idx))
+        listing = _normalize(row, dataset_name, idx)
+        if is_tech_job(listing):
+            results.append(listing)
+        else:
+            skipped += 1
 
-    logger.info("huggingface: transformed %d records", len(results))
+    logger.info(
+        "huggingface: %d tech jobs retained (dropped %d non-tech)",
+        len(results),
+        skipped,
+    )
     return results
 
 
