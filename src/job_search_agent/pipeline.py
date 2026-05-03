@@ -1,4 +1,4 @@
-"""Pipeline entry point: collect jobs from all free sources and persist to SQLite."""
+"""Pipeline entry point: collect tech jobs from all free sources and persist to SQLite."""
 
 import json
 import sys
@@ -7,6 +7,7 @@ from pathlib import Path
 from job_search_agent.collectors import remote_ok, the_muse
 from job_search_agent.collectors.base import JobListing
 from job_search_agent.db import get_engine, init_db, make_session_factory
+from job_search_agent.filters import is_tech_job
 from job_search_agent.ingest import upsert_jobs
 from job_search_agent.logger import get_logger
 
@@ -17,22 +18,30 @@ def run(
     muse_max_pages: int = 10,
     db_path: Path | str | None = None,
 ) -> list[JobListing]:
-    """Collect jobs from The Muse and Remote OK, optionally persisting to *db_path*.
+    """Collect tech jobs from The Muse and Remote OK, optionally persisting to *db_path*.
 
+    Each collector applies its own tech filter; this function adds a final
+    safety-net pass before persistence so no non-tech job can slip through.
     Returns the combined list of canonical job dicts regardless of whether
     persistence is requested.
     """
-    logger.info("pipeline: starting collection")
+    logger.info("pipeline: starting tech-jobs collection")
 
     muse_jobs = the_muse.collect(max_pages=muse_max_pages)
     remoteok_jobs = remote_ok.collect()
 
-    all_jobs = muse_jobs + remoteok_jobs
+    combined = muse_jobs + remoteok_jobs
+
+    # Safety-net: drop any non-tech job that slipped past collector-level filters.
+    all_jobs = [j for j in combined if is_tech_job(j)]
+    dropped = len(combined) - len(all_jobs)
+
     logger.info(
-        "pipeline: done — the_muse=%d remote_ok=%d total=%d",
+        "pipeline: done — the_muse=%d remote_ok=%d total=%d dropped_non_tech=%d",
         len(muse_jobs),
         len(remoteok_jobs),
         len(all_jobs),
+        dropped,
     )
 
     if db_path is not None:

@@ -194,3 +194,27 @@ def test_parse_tags_whitespace_only_skill_ignored():
     assert "  " not in tags
     assert "Python" in tags
     assert "SQL" in tags
+
+
+# ---------------------------------------------------------------------------
+# Tech-job filtering in collect()
+# ---------------------------------------------------------------------------
+
+@patch("job_search_agent.collectors.huggingface.load_dataset", create=True)
+def test_collect_drops_non_tech_rows(mock_load):
+    non_tech_row = {
+        "position_title": "Marketing Manager",
+        "company_name": "Brand Co",
+        "job_description": "Lead marketing campaigns.",
+        "job_skills": "brand strategy, campaigns",
+        "work_type": "Full-time",
+        "experience": "Senior level",
+        "location": "New York, NY",
+    }
+    mock_load.return_value = _make_dataset([_SAMPLE_ROW, non_tech_row])
+
+    with patch.dict("sys.modules", {"datasets": MagicMock(load_dataset=mock_load)}):
+        jobs = huggingface.collect("test/dataset", split="train")
+
+    assert len(jobs) == 1
+    assert jobs[0]["title"] == "Machine Learning Engineer"
